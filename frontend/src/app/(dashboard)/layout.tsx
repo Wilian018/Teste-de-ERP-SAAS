@@ -1,5 +1,8 @@
+"use client";
+
 import { LayoutDashboard, Users, ShoppingCart, Package, DollarSign, Settings, LogOut, Search, Building2, PackagePlus, ShieldCheck, Star, Receipt, ShoppingBag, FileCode, BarChart3, Printer } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -18,6 +21,14 @@ export default function DashboardLayout({
 }
 
 function Sidebar() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('saas_token');
+    localStorage.removeItem('saas_user');
+    router.push('/login');
+  };
+
   const menuItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "PDV (Frente de Caixa)", href: "/pdv", icon: ShoppingCart },
@@ -59,7 +70,7 @@ function Sidebar() {
         ))}
       </nav>
       <div className="p-4 border-t border-slate-800/60 relative z-10">
-        <button className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all hover:-translate-y-0.5 font-medium">
+        <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all hover:-translate-y-0.5 font-medium">
           <LogOut size={20} />
           Sair
         </button>
