@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import { LayoutDashboard, Users, ShoppingCart, Package, DollarSign, Settings, LogOut, Search, Building2, PackagePlus, ShieldCheck, Star, Receipt, ShoppingBag, FileCode, BarChart3, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,22 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('saas_token');
+    if (!token) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-medium text-slate-500">Autenticando...</div>;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden p-3 gap-3">
         <Sidebar />
