@@ -1,4 +1,4 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -41,6 +41,16 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .forRoutes('*'); // Aplica a leitura do companyId em todas as rotas
+      .forRoutes(
+        'api/companies',
+        'api/products',
+        'api/customers',
+        'api/sales',
+        'api/purchases',
+        'api/suppliers',
+        'api/users',
+        'api/cash',
+        'api/fiscal'
+      );
   }
 }
