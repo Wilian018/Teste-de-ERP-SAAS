@@ -9,7 +9,7 @@ export class TenantMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     // Permite que rotas públicas passem sem token (ex: /api/auth/login)
-    if (req.path.startsWith('/api/auth/')) {
+    if (req.path.includes('/api/auth')) {
       return RequestContext.run({}, () => next());
     }
 
