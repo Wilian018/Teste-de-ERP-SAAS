@@ -1,55 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { PackagePlus, Search, Edit2, Trash2, Box, ShieldAlert, Tag, Percent, Image as ImageIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { PackagePlus, Search, Edit2, Trash2, Box, ShieldAlert, Tag, Percent, Image as ImageIcon, X } from "lucide-react";
 
 export default function ProductsPage() {
   const [activeTab, setActiveTab] = useState("catalogo");
+  
+  // Estado real da API
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Modal de Produto
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  
+  // Dados do formulário
+  const [formData, setFormData] = useState({
+    name: '', sku: '', barcode: '', brand: '', 
+    costPrice: 0, salePrice: 0, stockQty: 0
+  });
 
-  const mockProducts = [
-    { 
-      id: 1, 
-      barcode: "7891234567890", 
-      internalCode: "00102",
-      sku: "ARZ-BCO-5KG",
-      name: "Arroz Branco Tipo 1", 
-      brand: "Tio João", 
-      category: "Alimentos Básicos", 
-      unit: "Pct 5kg",
-      costPrice: 18.50,
-      sellPrice: 24.90,
-      margin: 34.5,
-      stock: 120 
-    },
-    { 
-      id: 2, 
-      barcode: "7890987654321", 
-      internalCode: "00544",
-      sku: "OLE-SOJ-900ML",
-      name: "Óleo de Soja", 
-      brand: "Liza", 
-      category: "Óleos e Gorduras", 
-      unit: "Un 900ml",
-      costPrice: 6.20,
-      sellPrice: 8.50,
-      margin: 37.0,
-      stock: 45 
-    },
-    { 
-      id: 3, 
-      barcode: "7891112223334", 
-      internalCode: "00891",
-      sku: "LT-INT-1L",
-      name: "Leite Integral", 
-      brand: "Itambé", 
-      category: "Laticínios", 
-      unit: "Cx 1L",
-      costPrice: 4.10,
-      sellPrice: 5.80,
-      margin: 41.4,
-      stock: 350 
-    },
-  ];
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const token = localStorage.getItem('saas_token');
+      const res = await fetch(`${API_URL}/api/products`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleOpenModal = (product: any = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setFormData({
+        name: product.name || '',
+        sku: product.sku || '',
+        barcode: product.barcode || '',
+        brand: product.brand || '',
+        costPrice: Number(product.costPrice) || 0,
+        salePrice: Number(product.salePrice) || 0,
+        stockQty: product.stockQty || 0,
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({
+        name: '', sku: '', barcode: '', brand: '', 
+        costPrice: 0, salePrice: 0, stockQty: 0
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const token = localStorage.getItem('saas_token');
+    
+    try {
+      const method = editingProduct ? 'PATCH' : 'POST';
+      const url = editingProduct ? `${API_URL}/api/products/${editingProduct.id}` : `${API_URL}/api/products`;
+      
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          costPrice: Number(formData.costPrice),
+          salePrice: Number(formData.salePrice),
+          stockQty: Number(formData.stockQty)
+        }),
+      });
+
+      if (res.ok) {
+        setIsModalOpen(false);
+        fetchProducts();
+      } else {
+        alert('Erro ao salvar produto.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão ao salvar.');
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este produto permanentemente?')) return;
+    
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const token = localStorage.getItem('saas_token');
+    
+    try {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchProducts();
+      } else {
+        alert('Erro ao excluir produto.');
+      }
+    } catch (e) {
+      alert('Erro de conexão.');
+    }
+  };
 
   const mockBatches = [
     { id: 1, product: "Óleo de Soja 900ml", batch: "L2390A", expiry: "2026-08-15", qty: 20, status: "Normal" },
@@ -58,14 +128,14 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Catálogo e Estoque</h2>
           <p className="text-slate-500 mt-1">Gestão de produtos, SKUs, precificação, lotes e validades.</p>
         </div>
         <button 
-          onClick={() => alert("Funcionalidade em desenvolvimento: O formulário de criação de produtos será liberado em breve.")}
+          onClick={() => handleOpenModal()}
           className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition font-medium text-sm shadow-sm"
         >
           <PackagePlus size={18} /> Novo Produto
@@ -87,7 +157,7 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden min-h-[400px]">
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -100,7 +170,12 @@ export default function ProductsPage() {
         </div>
 
         {activeTab === "catalogo" && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative">
+            {isLoading ? (
+               <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 min-h-[300px]">
+                  <p className="text-slate-500 font-medium">Carregando produtos...</p>
+               </div>
+            ) : null}
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
                 <tr>
@@ -112,7 +187,19 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {mockProducts.map(p => (
+                {products.length === 0 && !isLoading && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                      Nenhum produto cadastrado na sua base. Clique em "Novo Produto" para começar.
+                    </td>
+                  </tr>
+                )}
+                {products.map(p => {
+                  const cost = Number(p.costPrice) || 0;
+                  const sell = Number(p.salePrice) || 0;
+                  const margin = cost > 0 ? (((sell - cost) / sell) * 100).toFixed(1) : 0;
+                  
+                  return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-3">
@@ -122,50 +209,50 @@ export default function ProductsPage() {
                         <div>
                           <p className="font-bold text-slate-800 leading-tight">{p.name}</p>
                           <div className="flex flex-col gap-0.5 mt-1 text-[11px] text-slate-500 font-mono">
-                            <span>EAN: {p.barcode}</span>
-                            <span>SKU: {p.sku} | Int: {p.internalCode}</span>
+                            <span>EAN: {p.barcode || 'N/A'}</span>
+                            <span>SKU: {p.sku || 'N/A'}</span>
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="font-medium text-slate-700 flex items-center gap-1.5"><Tag size={12}/> {p.category}</span>
-                        <span className="text-xs text-slate-500">Marca: <span className="font-bold text-slate-600">{p.brand}</span></span>
-                        <span className="text-xs text-slate-500">Und: <span className="font-medium">{p.unit}</span></span>
+                        <span className="font-medium text-slate-700 flex items-center gap-1.5"><Tag size={12}/> {p.ncm ? `NCM: ${p.ncm}` : 'Sem Classe'}</span>
+                        <span className="text-xs text-slate-500">Marca: <span className="font-bold text-slate-600">{p.brand || 'Diversos'}</span></span>
+                        <span className="text-xs text-slate-500">Und: <span className="font-medium">Un</span></span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <div className="flex justify-between w-32 text-xs">
                           <span className="text-slate-500">Custo:</span>
-                          <span className="font-medium text-slate-700">R$ {p.costPrice.toFixed(2)}</span>
+                          <span className="font-medium text-slate-700">R$ {cost.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between w-32 text-xs border-b border-slate-200 pb-1">
                           <span className="text-slate-500">Margem:</span>
-                          <span className="font-bold text-blue-600 flex items-center gap-0.5">{p.margin}% <Percent size={10}/></span>
+                          <span className="font-bold text-blue-600 flex items-center gap-0.5">{margin}% <Percent size={10}/></span>
                         </div>
                         <div className="flex justify-between w-32 text-sm pt-0.5">
                           <span className="text-slate-600 font-medium">Venda:</span>
-                          <span className="font-black text-emerald-600">R$ {p.sellPrice.toFixed(2)}</span>
+                          <span className="font-black text-emerald-600">R$ {sell.toFixed(2)}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className="font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg text-sm border border-slate-200">
-                        {p.stock}
+                        {p.stockQty}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button 
-                          onClick={() => alert("Funcionalidade em desenvolvimento: A edição de produtos estará disponível na próxima atualização.")}
+                          onClick={() => handleOpenModal(p)}
                           className="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded transition"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
-                          onClick={() => alert("Funcionalidade em desenvolvimento: A exclusão de produtos requer permissões adicionais que serão implementadas em breve.")}
+                          onClick={() => handleDeleteProduct(p.id)}
                           className="text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 p-2 rounded transition"
                         >
                           <Trash2 size={16} />
@@ -173,7 +260,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -219,6 +306,119 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Produto */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-slate-800">
+                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveProduct} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Nome do Produto *</label>
+                  <input 
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">SKU</label>
+                  <input 
+                    type="text"
+                    value={formData.sku}
+                    onChange={e => setFormData({...formData, sku: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Código de Barras (EAN)</label>
+                  <input 
+                    type="text"
+                    value={formData.barcode}
+                    onChange={e => setFormData({...formData, barcode: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Marca</label>
+                  <input 
+                    type="text"
+                    value={formData.brand}
+                    onChange={e => setFormData({...formData, brand: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Estoque Inicial</label>
+                  <input 
+                    type="number"
+                    value={formData.stockQty}
+                    onChange={e => setFormData({...formData, stockQty: Number(e.target.value)})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Preço de Custo (R$)</label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    value={formData.costPrice}
+                    onChange={e => setFormData({...formData, costPrice: Number(e.target.value)})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Preço de Venda (R$) *</label>
+                  <input 
+                    required
+                    type="number"
+                    step="0.01"
+                    value={formData.salePrice}
+                    onChange={e => setFormData({...formData, salePrice: Number(e.target.value)})}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 flex justify-end gap-3 border-t border-slate-100">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2.5 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition"
+                >
+                  {editingProduct ? 'Atualizar Produto' : 'Salvar Produto'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
