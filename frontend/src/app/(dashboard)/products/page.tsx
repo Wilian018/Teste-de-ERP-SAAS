@@ -64,7 +64,10 @@ export default function ProductsPage() {
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Catálogo e Estoque</h2>
           <p className="text-slate-500 mt-1">Gestão de produtos, SKUs, precificação, lotes e validades.</p>
         </div>
-        <button className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition font-medium text-sm shadow-sm">
+        <button 
+          onClick={() => alert("Funcionalidade em desenvolvimento: O formulário de criação de produtos será liberado em breve.")}
+          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition font-medium text-sm shadow-sm"
+        >
           <PackagePlus size={18} /> Novo Produto
         </button>
       </div>
@@ -155,8 +158,18 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded transition"><Edit2 size={16} /></button>
-                        <button className="text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 p-2 rounded transition"><Trash2 size={16} /></button>
+                        <button 
+                          onClick={() => alert("Funcionalidade em desenvolvimento: A edição de produtos estará disponível na próxima atualização.")}
+                          className="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded transition"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => alert("Funcionalidade em desenvolvimento: A exclusão de produtos requer permissões adicionais que serão implementadas em breve.")}
+                          className="text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 p-2 rounded transition"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -192,7 +205,12 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button className="text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-200 transition">Movimentar Baixa</button>
+                      <button 
+                        onClick={() => alert("Funcionalidade em desenvolvimento: O painel de movimentação de estoque será liberado na fase 2 do PDV.")}
+                        className="text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-200 transition"
+                      >
+                        Movimentar Baixa
+                      </button>
                     </td>
                   </tr>
                 ))}
