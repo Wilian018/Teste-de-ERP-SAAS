@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  cnpj      String   @unique
+  name      String
+  users     User[]
+  products  Product[]
+  customers Customer[]
+  sales     Sale[]
+  financial FinancialTransaction[]
+  suppliers Supplier[]
+  purchases PurchaseOrder[]
+  auditLogs AuditLog[]
+  cashRegisters CashRegister[]
+  cashSessions  CashRegisterSession[]
+  fiscalNotes   FiscalNote[]
+  promotions    Promotion[]
+  costCenters   CostCenter[]
+  campaigns     MarketingCampaign[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  email     String   @unique
+  password  String
+  role      String   // ADMIN, CASHIER, MANAGER
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  company   Company  @relation(fields: [companyId], references: [id])
+  auditLogs AuditLog[]
+  cashSessions CashRegisterSession[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  companyId   String
+  barcode     String?
+  sku         String?
+  name        String
+  costPrice   Decimal
+  salePrice   Decimal
+  stockQty    Int      @default(0)
+  ncm         String?  // Nomenclatura Comum do Mercosul
+  cfop        String?  // Código Fiscal de Operações
+  cst         String?  // Código de Situação Tributária
+  csosn       String?  // Código de Situação da Operação - Simples Nacional
+  icmsRate    Decimal? // Alíquota ICMS
+  brand       String?  // Marca
+  imageUrl    String?  // Foto do produto
+  
+  company     Company  @relation(fields: [companyId], references: [id])
+  saleItems   SaleItem[]
+  purchaseItems PurchaseItem[]
+  promotions  Promotion[]
+  batches     ProductBatch[]
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  companyId   String
+  cpfCnpj     String
+  name        String
+  creditLimit Decimal  @default(0)
+  company     Company  @relation(fields: [companyId], references: [id])
+  sales       Sale[]
+  points      CustomerPoints?
+  account     CustomerAccount?
+}
+
+model Sale {
+  id          String     @id @default(uuid())
+  companyId   String
+  customerId  String?
+  totalAmount Decimal
+  status      String     // PENDING, COMPLETED, CANCELED
+  createdAt   DateTime   @default(now())
+  
+  company     Company    @relation(fields: [companyId], references: [id])
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  items       SaleItem[]
+  financials  FinancialTransaction[]
+  fiscalNote  FiscalNote?
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Decimal
+  
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model FinancialTransaction {
+  id          String   @id @default(uuid())
+  companyId   String
+  saleId      String?
+  costCenterId String?
+  type        String   // INCOME, EXPENSE
+  amount      Decimal
+  status      String   // PENDING, PAID
+  dueDate     DateTime
+  
+  company     Company  @relation(fields: [companyId], references: [id])
+  sale        Sale?    @relation(fields: [saleId], references: [id])
+  costCenter  CostCenter? @relation(fields: [costCenterId], references: [id])
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  companyId   String
+  cnpj        String
+  name        String
+  email       String?
+  phone       String?
+  company     Company  @relation(fields: [companyId], references: [id])
+  purchases   PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id          String         @id @default(uuid())
+  companyId   String
+  supplierId  String
+  totalAmount Decimal
+  status      String         // PENDING, RECEIVED, CANCELED
+  createdAt   DateTime       @default(now())
+  
+  company     Company        @relation(fields: [companyId], references: [id])
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  items       PurchaseItem[]
+}
+
+model PurchaseItem {
+  id              String         @id @default(uuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Int
+  unitCost        Decimal
+  
+  purchaseOrder   PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id])
+  product         Product        @relation(fields: [productId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  companyId String
+  userId    String
+  action    String   // CREATE_PRODUCT, DELETE_SALE, etc
+  entity    String   // Product, Sale, User
+  entityId  String?
+  details   String?  // JSON stringified changes
+  createdAt DateTime @default(now())
+
+  company   Company  @relation(fields: [companyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CashRegister {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String   // "Caixa 01"
+  status      String   @default("CLOSED") // OPEN, CLOSED
+  
+  company     Company  @relation(fields: [companyId], references: [id])
+  sessions    CashRegisterSession[]
+}
+
+model CashRegisterSession {
+  id             String   @id @default(uuid())
+  companyId      String
+  cashRegisterId String
+  userId         String
+  openedAt       DateTime @default(now())
+  closedAt       DateTime?
+  openingBalance Decimal  // Fundo de Troco
+  closingBalance Decimal? // Quanto contou no final
+  status         String   @default("OPEN") // OPEN, CLOSED
+  
+  company        Company       @relation(fields: [companyId], references: [id])
+  cashRegister   CashRegister  @relation(fields: [cashRegisterId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+  movements      CashMovement[]
+}
+
+model CashMovement {
+  id          String   @id @default(uuid())
+  sessionId   String
+  type        String   // SANGRIA, SUPRIMENTO, SALE
+  amount      Decimal
+  description String?
+  createdAt   DateTime @default(now())
+
+  session     CashRegisterSession @relation(fields: [sessionId], references: [id])
+}
+
+model FiscalNote {
+  id            String   @id @default(uuid())
+  companyId     String
+  saleId        String   @unique
+  number        String?  // Número da NFC-e / NF-e
+  series        String?  // Série
+  accessKey     String?  // Chave de Acesso (44 dígitos)
+  xmlBase64     String?  // Arquivo XML Base64
+  status        String   // PENDING, AUTHORIZED, CANCELED, REJECTED
+  environment   String   // HOMOLOGATION, PRODUCTION
+  issuedAt      DateTime @default(now())
+  
+  company       Company  @relation(fields: [companyId], references: [id])
+  sale          Sale     @relation(fields: [saleId], references: [id])
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String   // "Leve 3 Pague 2 Coca-Cola"
+  productId   String?  // Aplicável a um produto específico
+  type        String   // QUANTITY_DISCOUNT, PERCENTAGE
+  minQuantity Int?     // Ex: 3
+  discount    Decimal  // Ex: 33.33 (33%)
+  active      Boolean  @default(true)
+  
+  company     Company  @relation(fields: [companyId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+model CustomerPoints {
+  id          String   @id @default(uuid())
+  customerId  String   @unique
+  balance     Int      @default(0) // Pontos acumulados
+  
+  customer    Customer @relation(fields: [customerId], references: [id])
+}
+
+model CostCenter {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String   // "Marketing", "Operacional", "Pessoal"
+  description String?
+  
+  company     Company  @relation(fields: [companyId], references: [id])
+  financials  FinancialTransaction[]
+}
+
+model CustomerAccount {
+  id          String   @id @default(uuid())
+  customerId  String   @unique
+  balance     Decimal  @default(0) // Saldo Devedor (Fiado)
+  limit       Decimal  @default(0) // Limite de Crédito
+  
+  customer    Customer @relation(fields: [customerId], references: [id])
+}
+
+model ProductBatch {
+  id          String   @id @default(uuid())
+  productId   String
+  batchNumber String
+  expiryDate  DateTime? // Validade
+  quantity    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model MarketingCampaign {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  message     String   // Texto disparado via WhatsApp/SMS
+  targetGroup String   // VIP, INATIVOS, TODOS
+  status      String   @default("DRAFT") // DRAFT, SENT
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id])
+}

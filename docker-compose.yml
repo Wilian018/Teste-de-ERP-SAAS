@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: erp_pdv_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: erp_pdv_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - erp_pdv_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: erp_pdv_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - erp_pdv_redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  erp_pdv_pgdata:
+  erp_pdv_redisdata:
