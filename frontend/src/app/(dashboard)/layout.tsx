@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { LayoutDashboard, Users, ShoppingCart, Package, DollarSign, Settings, LogOut, Search, Building2, PackagePlus, ShieldCheck, Star, Receipt, ShoppingBag, FileCode, BarChart3, Printer } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -39,6 +39,7 @@ export default function DashboardLayout({
 
 function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     localStorage.removeItem('saas_token');
@@ -71,20 +72,23 @@ function Sidebar() {
         <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide">SaaS Varejo Pro</p>
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar relative z-10">
-        {menuItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
-              item.name === "Dashboard" 
-                ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] font-semibold" 
-                : "text-slate-400 hover:bg-slate-800 hover:text-white hover:translate-x-1"
-            }`}
-          >
-            <item.icon size={20} />
-            <span className="font-medium">{item.name}</span>
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                isActive 
+                  ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] font-semibold" 
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white hover:translate-x-1"
+              }`}
+            >
+              <item.icon size={20} />
+              <span className="font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
       </nav>
       <div className="p-4 border-t border-slate-800/60 relative z-10">
         <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all hover:-translate-y-0.5 font-medium">
