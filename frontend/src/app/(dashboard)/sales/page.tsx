@@ -31,7 +31,10 @@ export default function FiscalPage() {
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Gestão Fiscal & Tributária</h2>
           <p className="text-slate-500 mt-1">Emissão de notas (NFC-e/NF-e), geração de SPED e matriz de tributação.</p>
         </div>
-        <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm">
+        <button 
+          onClick={() => alert("Funcionalidade em desenvolvimento: Emissão manual de notas fiscais.")}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm"
+        >
           <FileText size={18} /> Emitir NF-e Manual
         </button>
       </div>
@@ -114,10 +117,18 @@ export default function FiscalPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition" title="Baixar DANFE / Cupom PDF">
+                          <button 
+                            onClick={() => alert("Funcionalidade em desenvolvimento: O download do DANFE em PDF estará disponível em breve.")}
+                            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition" 
+                            title="Baixar DANFE / Cupom PDF"
+                          >
                             <Receipt size={16} />
                           </button>
-                          <button className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Baixar XML">
+                          <button 
+                            onClick={() => alert("Funcionalidade em desenvolvimento: O download do arquivo XML estará disponível em breve.")}
+                            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition" 
+                            title="Baixar XML"
+                          >
                             <Download size={16} />
                           </button>
                         </div>
@@ -159,7 +170,10 @@ export default function FiscalPage() {
                   </select>
                 </div>
               </div>
-              <button className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+              <button 
+                onClick={() => alert("Funcionalidade em desenvolvimento: A geração de arquivos SPED e Sintegra será implementada na próxima fase.")}
+                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2"
+              >
                 <Download size={20} /> Gerar e Baixar Arquivo
               </button>
             </div>
@@ -171,7 +185,12 @@ export default function FiscalPage() {
           <div className="overflow-x-auto">
             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
               <span className="font-bold text-slate-700 text-sm flex items-center gap-2"><Settings2 size={16} /> Matriz Fiscal da Empresa</span>
-              <button className="text-xs font-bold text-indigo-600 hover:underline">Adicionar Regra</button>
+              <button 
+                onClick={() => alert("Funcionalidade em desenvolvimento: O painel de criação de novas regras tributárias será liberado em breve.")}
+                className="text-xs font-bold text-indigo-600 hover:underline"
+              >
+                Adicionar Regra
+              </button>
             </div>
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
