@@ -25,6 +25,7 @@ model Company {
   promotions    Promotion[]
   costCenters   CostCenter[]
   campaigns     MarketingCampaign[]
+  stockMovements StockMovement[]
 }
 
 model User {
@@ -64,6 +65,7 @@ model Product {
   purchaseItems PurchaseItem[]
   promotions  Promotion[]
   batches     ProductBatch[]
+  stockMovements StockMovement[]
 }
 
 model Customer {
