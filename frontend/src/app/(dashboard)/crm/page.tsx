@@ -10,7 +10,7 @@ export default function CrmPage() {
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", type: "SMS", status: "ACTIVE" });
+  const [formData, setFormData] = useState({ name: "", message: "", targetGroup: "TODOS", status: "DRAFT" });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -77,7 +77,7 @@ export default function CrmPage() {
               <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4">Nome da Campanha</th>
-                  <th className="px-6 py-4">Tipo</th>
+                  <th className="px-6 py-4">Público Alvo</th>
                   <th className="px-6 py-4 text-center">Status</th>
                   <th className="px-6 py-4 text-center">Data Criação</th>
                 </tr>
@@ -89,9 +89,9 @@ export default function CrmPage() {
                   campaigns.map(c => (
                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-800">{c.name}</td>
-                      <td className="px-6 py-4 font-bold text-indigo-600">{c.type}</td>
+                      <td className="px-6 py-4 font-bold text-indigo-600">{c.targetGroup}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className="px-2 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-700">{c.status}</span>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${c.status === 'SENT' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{c.status}</span>
                       </td>
                       <td className="px-6 py-4 text-center text-slate-500">{new Date(c.createdAt).toLocaleDateString()}</td>
                     </tr>
@@ -116,12 +116,16 @@ export default function CrmPage() {
                 <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
-                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500">
-                  <option value="SMS">Disparo de SMS</option>
-                  <option value="EMAIL">Email Marketing</option>
-                  <option value="WHATSAPP">WhatsApp Message</option>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Público Alvo</label>
+                <select value={formData.targetGroup} onChange={e => setFormData({...formData, targetGroup: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500">
+                  <option value="TODOS">Todos os Clientes</option>
+                  <option value="VIP">Clientes VIP (Alto valor em compras)</option>
+                  <option value="INATIVOS">Clientes Inativos (> 30 dias)</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Mensagem (SMS / WhatsApp)</label>
+                <textarea required rows={3} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" placeholder="Olá! Temos uma oferta especial para você..."></textarea>
               </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 border font-bold rounded-lg hover:bg-slate-50">Cancelar</button>
