@@ -1,49 +1,87 @@
 "use client";
 
-import { Users, Search, Plus, CreditCard, MapPin, ShoppingBag, Star, History } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Users, Search, Plus, UserPlus, CreditCard, Star, FileText, CheckCircle2, History, X } from "lucide-react";
 
 export default function CustomersPage() {
-  const [activeTab, setActiveTab] = useState("cadastro");
+  const [activeTab, setActiveTab] = useState("geral");
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockCustomers = [
-    { 
-      id: 1, 
-      name: "Maria Silva", 
-      cpf: "111.222.333-44", 
-      phone: "(11) 98765-4321", 
-      address: "Rua das Flores, 123 - Centro, São Paulo/SP",
-      limit: 500, 
-      debt: 150.50,
-      loyaltyPoints: 1250,
-      totalPurchases: 45,
-      lastPurchase: "14/06/2026"
-    },
-    { 
-      id: 2, 
-      name: "João Pedro Souza", 
-      cpf: "22.333.444/0001-55", 
-      phone: "(11) 91234-5678", 
-      address: "Av. Paulista, 1000 - Bela Vista, São Paulo/SP",
-      limit: 1000, 
-      debt: 0,
-      loyaltyPoints: 340,
-      totalPurchases: 12,
-      lastPurchase: "02/06/2026"
-    },
-    { 
-      id: 3, 
-      name: "Fernanda Costa", 
-      cpf: "333.444.555-66", 
-      phone: "(11) 99988-7766", 
-      address: "Rua Augusta, 500 - Consolação, São Paulo/SP",
-      limit: 300, 
-      debt: 280.00,
-      loyaltyPoints: 2100,
-      totalPurchases: 89,
-      lastPurchase: "15/06/2026"
-    },
-  ];
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    cpfCnpj: "",
+    creditLimit: "0"
+  });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  const fetchCustomers = async () => {
+    try {
+      const token = localStorage.getItem('saas_token');
+      const res = await fetch(`${API_URL}/api/customers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const handleOpenModal = (customer: any = null) => {
+    if (customer) {
+      setEditingId(customer.id);
+      setFormData({
+        name: customer.name,
+        cpfCnpj: customer.cpfCnpj,
+        creditLimit: customer.creditLimit.toString()
+      });
+    } else {
+      setEditingId(null);
+      setFormData({ name: "", cpfCnpj: "", creditLimit: "0" });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('saas_token');
+    try {
+      const payload = {
+        name: formData.name,
+        cpfCnpj: formData.cpfCnpj,
+        creditLimit: Number(formData.creditLimit)
+      };
+
+      const url = editingId ? `${API_URL}/api/customers/${editingId}` : `${API_URL}/api/customers`;
+      const method = editingId ? "PATCH" : "POST";
+
+      await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      setIsModalOpen(false);
+      fetchCustomers();
+    } catch (err) {
+      alert("Erro ao salvar cliente.");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -52,15 +90,18 @@ export default function CustomersPage() {
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Gestão de Clientes</h2>
           <p className="text-slate-500 mt-1">Cadastro completo, limites de fiado e programa de fidelidade.</p>
         </div>
-        <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm">
+        <button 
+          onClick={() => handleOpenModal()}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm"
+        >
           <Plus size={18} /> Novo Cliente
         </button>
       </div>
 
       <div className="flex border-b border-slate-200">
         <button 
-          onClick={() => setActiveTab("cadastro")}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "cadastro" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+          onClick={() => setActiveTab("geral")}
+          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "geral" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
         >
           Cadastro Geral
         </button>
@@ -69,12 +110,6 @@ export default function CustomersPage() {
           className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "fiado" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
         >
           Controle de Fiado / Crédito
-        </button>
-        <button 
-          onClick={() => setActiveTab("fidelidade")}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "fidelidade" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-        >
-          Histórico & Fidelidade
         </button>
       </div>
 
@@ -90,114 +125,107 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {activeTab === "cadastro" && (
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Nome do Cliente</th>
-                <th className="px-6 py-4">CPF / CNPJ</th>
-                <th className="px-6 py-4">Contato</th>
-                <th className="px-6 py-4">Endereço Completo</th>
-                <th className="px-6 py-4 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {mockCustomers.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                      {c.name.charAt(0)}
-                    </div>
-                    {c.name}
-                  </td>
-                  <td className="px-6 py-4 font-mono text-slate-500">{c.cpf}</td>
-                  <td className="px-6 py-4">{c.phone}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-slate-500">
-                      <MapPin size={14} className="text-slate-400" /> {c.address}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-indigo-600 font-bold cursor-pointer hover:underline">Editar</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {isLoading ? (
+          <div className="text-center py-10 text-slate-500">Carregando clientes...</div>
+        ) : (
+          <>
+            {activeTab === "geral" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4">Nome do Cliente</th>
+                      <th className="px-6 py-4">CPF / CNPJ</th>
+                      <th className="px-6 py-4 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {customers.length === 0 ? (
+                      <tr><td colSpan={3} className="text-center py-6">Nenhum cliente cadastrado.</td></tr>
+                    ) : (
+                      customers.map(c => (
+                        <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-indigo-50 text-indigo-600 font-bold rounded-full flex items-center justify-center">
+                                {c.name.charAt(0)}
+                              </div>
+                              <span className="font-bold text-slate-800">{c.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-slate-600">{c.cpfCnpj}</td>
+                          <td className="px-6 py-4 text-center">
+                            <button onClick={() => handleOpenModal(c)} className="font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded">Editar</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-        {activeTab === "fiado" && (
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4 text-center">Limite de Crédito</th>
-                <th className="px-6 py-4 text-center">Saldo Devedor (Fiado)</th>
-                <th className="px-6 py-4 text-center">Crédito Disponível</th>
-                <th className="px-6 py-4 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {mockCustomers.map(c => {
-                const available = c.limit - c.debt;
-                const critical = available < 50;
-                return (
-                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-800">{c.name}</td>
-                    <td className="px-6 py-4 text-center text-slate-500 font-medium">R$ {c.limit.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-center font-bold text-red-500">R$ {c.debt.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${critical ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                        R$ {available.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg flex items-center justify-center gap-1 mx-auto hover:bg-indigo-200 transition">
-                        <CreditCard size={14} /> Receber Fatura
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-
-        {activeTab === "fidelidade" && (
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4 text-center">Histórico de Compras</th>
-                <th className="px-6 py-4 text-center">Última Compra</th>
-                <th className="px-6 py-4 text-center">Pontuação de Fidelidade</th>
-                <th className="px-6 py-4 text-center">Ações CRM</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {mockCustomers.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-800">{c.name}</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 font-medium">
-                      <ShoppingBag size={14} className="text-blue-500" /> {c.totalPurchases} pedidos
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-slate-500">{c.lastPurchase}</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 font-bold text-amber-500">
-                      <Star size={16} fill="currentColor" /> {c.loyaltyPoints} pts
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-lg flex items-center justify-center gap-1 mx-auto hover:bg-slate-200 transition">
-                      <History size={14} /> Ver Extrato
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            {activeTab === "fiado" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4">Cliente</th>
+                      <th className="px-6 py-4">Limite de Crédito</th>
+                      <th className="px-6 py-4">Crédito Disponível</th>
+                      <th className="px-6 py-4 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {customers.map(c => (
+                      <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-bold text-slate-800">{c.name}</td>
+                        <td className="px-6 py-4 text-slate-600">R$ {Number(c.creditLimit).toFixed(2)}</td>
+                        <td className="px-6 py-4 font-bold text-emerald-600">R$ {Number(c.creditLimit).toFixed(2)}</td>
+                        <td className="px-6 py-4 text-center">
+                          <button onClick={() => alert("Em breve: Integração com Faturas")} className="text-xs flex items-center justify-center gap-1 mx-auto bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-200 font-bold transition">
+                            <FileText size={14}/> Receber Fatura
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b text-slate-800 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-bold">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            </div>
+            
+            <form onSubmit={handleSaveCustomer} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Nome Completo</label>
+                <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">CPF ou CNPJ</label>
+                <input type="text" required value={formData.cpfCnpj} onChange={e => setFormData({...formData, cpfCnpj: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Limite de Crédito (R$)</label>
+                <input type="number" step="0.01" required value={formData.creditLimit} onChange={e => setFormData({...formData, creditLimit: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 border font-bold rounded-lg hover:bg-slate-50">Cancelar</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

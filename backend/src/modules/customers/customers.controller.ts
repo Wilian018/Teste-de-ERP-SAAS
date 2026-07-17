@@ -1,12 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException } from '@nestjs/common';
 import { CustomersService } from './customers.service';
+
+import { RequestContext } from '../../context/request-context';
 
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   private getCompanyId() {
-    return 'default-company-id'; // This will be replaced by AuthGuard later
+    const context = RequestContext.getStore();
+    if (!context || !context.companyId) {
+      throw new UnauthorizedException('Empresa não identificada no contexto da requisição');
+    }
+    return context.companyId;
   }
 
   @Post()
