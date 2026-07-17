@@ -1,12 +1,18 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, UnauthorizedException } from '@nestjs/common';
 import { PurchasesService } from './purchases.service';
+
+import { RequestContext } from '../../context/request-context';
 
 @Controller('purchases')
 export class PurchasesController {
   constructor(private readonly purchasesService: PurchasesService) {}
 
   private getCompanyId() {
-    return 'default-company-id'; // Simulação de JWT
+    const context = RequestContext.getStore();
+    if (!context || !context.companyId) {
+      throw new UnauthorizedException('Empresa não identificada no contexto da requisição');
+    }
+    return context.companyId;
   }
 
   @Post()

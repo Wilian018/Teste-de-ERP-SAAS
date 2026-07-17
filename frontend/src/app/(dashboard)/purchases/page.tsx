@@ -1,202 +1,235 @@
 "use client";
 
-import { ShoppingBag, Search, Plus, PackagePlus, ArrowRightLeft, ShieldAlert, FileDigit, TrendingDown, ClipboardList } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PackagePlus, Search, ArrowRightLeft, TrendingDown, ClipboardList, X, ShieldAlert, FileDigit, Plus } from "lucide-react";
 
-export default function InventoryMovementsPage() {
-  const [activeTab, setActiveTab] = useState("entradas");
+export default function StockMovementsPage() {
+  const [activeTab, setActiveTab] = useState("historico");
+  const [movements, setMovements] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockPurchases = [
-    { id: "ENT-1001", date: "15/06/2026", type: "Compra Fornecedor", origin: "Ambev S.A.", total: 4500.00, status: "CONCLUÍDO" },
-    { id: "ENT-1002", date: "16/06/2026", type: "Compra Fornecedor", origin: "Coca-Cola Indústrias", total: 1250.00, status: "CONCLUÍDO" },
-    { id: "ENT-1003", date: "18/06/2026", type: "Devolução Cliente", origin: "João Pedro Souza", total: 85.00, status: "PENDENTE" },
-  ];
+  // Modals
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
 
-  const mockTransfers = [
-    { id: "SAI-2001", date: "14/06/2026", type: "Transferência Filial", dest: "Filial Zona Sul", items: 45, status: "EM TRÂNSITO" },
-    { id: "SAI-2002", date: "16/06/2026", type: "Transferência Filial", dest: "Depósito Central", items: 120, status: "CONCLUÍDO" },
-    { id: "SAI-2003", date: "17/06/2026", type: "Saída Avulsa (Uso Interno)", dest: "Copa/Cozinha", items: 3, status: "CONCLUÍDO" },
-  ];
+  const [formData, setFormData] = useState({
+    productId: "",
+    type: "IN", // IN, OUT, ADJUSTMENT
+    quantity: "",
+    reason: ""
+  });
 
-  const mockAdjustments = [
-    { id: "AJ-3001", date: "10/06/2026", type: "Perda/Avaria", product: "Óleo de Soja 900ml", qty: "-2 un", reason: "Embalagem Danificada", status: "LANÇADO" },
-    { id: "AJ-3002", date: "12/06/2026", type: "Vencimento", product: "Leite Integral 1L", qty: "-12 un", reason: "Lote Vencido (LT009X)", status: "LANÇADO" },
-    { id: "AJ-3003", date: "15/06/2026", type: "Inventário (Balanço)", product: "Arroz Branco 5kg", qty: "+5 un", reason: "Sobra no Balanço Físico", status: "LANÇADO" },
-  ];
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('saas_token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [moveRes, prodRes] = await Promise.all([
+        fetch(`${API_URL}/api/stock`, { headers }),
+        fetch(`${API_URL}/api/products`, { headers })
+      ]);
+
+      if (moveRes.ok) setMovements(await moveRes.json());
+      if (prodRes.ok) setProducts(await prodRes.json());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSaveMovement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('saas_token');
+    try {
+      await fetch(`${API_URL}/api/stock/move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          productId: formData.productId,
+          type: formData.type,
+          quantity: Number(formData.quantity),
+          reason: formData.reason
+        })
+      });
+      setIsMoveModalOpen(false);
+      setIsInventoryModalOpen(false);
+      setFormData({ productId: "", type: "IN", quantity: "", reason: "" });
+      fetchData(); // Reload data
+    } catch (err) {
+      alert("Erro ao salvar movimentação.");
+    }
+  };
+
+  const openMoveModal = () => {
+    setFormData({ productId: "", type: "IN", quantity: "", reason: "" });
+    setIsMoveModalOpen(true);
+  };
+
+  const openInventoryModal = () => {
+    setFormData({ productId: "", type: "ADJUSTMENT", quantity: "", reason: "Balanço/Inventário" });
+    setIsInventoryModalOpen(true);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Movimentações de Estoque</h2>
-          <p className="text-slate-500 mt-1">Controle de Entradas, Saídas, Transferências, Perdas e Balanço Geral.</p>
+          <p className="text-slate-500 mt-1">Controle de Entradas, Saídas, Ajustes e Inventário (Balanço).</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition font-medium text-sm shadow-sm">
+          <button onClick={openInventoryModal} className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition font-medium text-sm shadow-sm">
             <ClipboardList size={18} /> Iniciar Inventário
           </button>
-          <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm">
+          <button onClick={openMoveModal} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm">
             <PackagePlus size={18} /> Nova Movimentação
           </button>
         </div>
       </div>
 
-      <div className="flex border-b border-slate-200">
-        <button 
-          onClick={() => setActiveTab("entradas")}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "entradas" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-        >
-          Entradas de Mercadoria
-        </button>
-        <button 
-          onClick={() => setActiveTab("saidas")}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "saidas" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-        >
-          Saídas & Transferências
-        </button>
-        <button 
-          onClick={() => setActiveTab("ajustes")}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === "ajustes" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-        >
-          Ajustes, Perdas & Vencimentos
-        </button>
-      </div>
-
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-        
-        {/* Barra de Pesquisa */}
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar pelo código do documento, nota ou produto..." 
+              placeholder="Buscar histórico de movimentações..." 
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 text-sm"
             />
           </div>
         </div>
 
-        {/* Tab 1: Entradas */}
-        {activeTab === "entradas" && (
+        {isLoading ? (
+          <div className="text-center py-10 text-slate-500">Carregando histórico...</div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">Documento (Entrada)</th>
-                  <th className="px-6 py-4">Origem / Fornecedor</th>
-                  <th className="px-6 py-4 text-center">Tipo de Movimento</th>
-                  <th className="px-6 py-4 text-center">Data</th>
-                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4">Protocolo</th>
+                  <th className="px-6 py-4">Data / Hora</th>
+                  <th className="px-6 py-4">Tipo</th>
+                  <th className="px-6 py-4">Produto</th>
+                  <th className="px-6 py-4 text-center">Qtd</th>
+                  <th className="px-6 py-4">Motivo/Justificativa</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {mockPurchases.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-indigo-600">{p.id}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center">
-                          <ShoppingBag size={16} />
-                        </div>
-                        <span className="font-bold text-slate-800">{p.origin}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center text-slate-600">{p.type}</td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500">{p.date}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.status === 'CONCLUÍDO' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 2: Saídas e Transferências */}
-        {activeTab === "saidas" && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4">Documento (Saída)</th>
-                  <th className="px-6 py-4">Destino / Filial</th>
-                  <th className="px-6 py-4 text-center">Tipo de Movimento</th>
-                  <th className="px-6 py-4 text-center">Itens (Qtd)</th>
-                  <th className="px-6 py-4 text-center">Data</th>
-                  <th className="px-6 py-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {mockTransfers.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-amber-600">{t.id}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center">
-                          <ArrowRightLeft size={16} />
-                        </div>
-                        <span className="font-bold text-slate-800">{t.dest}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center text-slate-600">{t.type}</td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-700">{t.items} un</td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500">{t.date}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.status === 'CONCLUÍDO' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 3: Ajustes, Perdas e Vencimentos */}
-        {activeTab === "ajustes" && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4">Protocolo (Ajuste)</th>
-                  <th className="px-6 py-4">Motivo / Tipo</th>
-                  <th className="px-6 py-4">Produto Afetado</th>
-                  <th className="px-6 py-4 text-center">Ajuste Qtd</th>
-                  <th className="px-6 py-4 text-center">Justificativa / Lote</th>
-                  <th className="px-6 py-4 text-center">Data</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {mockAdjustments.map(a => (
-                  <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-red-500">{a.id}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${a.type === 'Inventário (Balanço)' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
-                          {a.type === 'Inventário (Balanço)' ? <FileDigit size={16} /> : <TrendingDown size={16} />}
-                        </div>
-                        <span className="font-bold text-slate-800">{a.type}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-600">{a.product}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`font-black ${a.qty.includes('+') ? 'text-emerald-600' : 'text-red-600'}`}>{a.qty}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center text-slate-500 text-xs flex items-center justify-center gap-1">
-                      {a.type === 'Vencimento' && <ShieldAlert size={14} className="text-amber-500" />} {a.reason}
-                    </td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500">{a.date}</td>
-                  </tr>
-                ))}
+                {movements.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-6">Nenhuma movimentação registrada.</td></tr>
+                ) : (
+                  movements.map(m => (
+                    <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-slate-400">{m.id.split('-')[0]}</td>
+                      <td className="px-6 py-4 font-medium text-slate-500">{new Date(m.createdAt).toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          m.type === 'IN' ? 'bg-emerald-100 text-emerald-700' :
+                          m.type === 'OUT' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {m.type === 'IN' ? 'ENTRADA' : m.type === 'OUT' ? 'SAÍDA' : 'AJUSTE/BALANÇO'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-800">{m.product?.name || 'Produto Excluído'}</td>
+                      <td className={`px-6 py-4 text-center font-black ${
+                          m.type === 'IN' ? 'text-emerald-600' : m.type === 'OUT' ? 'text-red-600' : 'text-slate-800'
+                        }`}>
+                        {m.type === 'IN' ? '+' : m.type === 'OUT' ? '-' : ''}{m.quantity}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">{m.reason || '-'}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Modal Nova Movimentação */}
+      {isMoveModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b text-slate-800 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-bold">Registrar Movimentação</h2>
+              <button onClick={() => setIsMoveModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            </div>
+            <form onSubmit={handleSaveMovement} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Produto</label>
+                <select required value={formData.productId} onChange={e => setFormData({...formData, productId: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500">
+                  <option value="">Selecione o produto...</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (Estoque atual: {p.stockQty})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
+                  <select required value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500">
+                    <option value="IN">Entrada (+)</option>
+                    <option value="OUT">Saída (-)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Quantidade</label>
+                  <input type="number" required min="1" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Motivo / Justificativa</label>
+                <input type="text" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} placeholder="Ex: Devolução, Compra sem NF, Avaria..." className="w-full border rounded-lg px-4 py-2 outline-none focus:border-indigo-500" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsMoveModalOpen(false)} className="flex-1 px-4 py-2 border font-bold rounded-lg hover:bg-slate-50">Cancelar</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">Salvar Movimentação</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Inventário */}
+      {isInventoryModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border-t-4 border-amber-500">
+            <div className="p-6 border-b text-slate-800 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-bold flex items-center gap-2"><ClipboardList className="text-amber-500"/> Contagem / Inventário</h2>
+              <button onClick={() => setIsInventoryModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            </div>
+            <form onSubmit={handleSaveMovement} className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 mb-4">Insira a quantidade REAL contada na prateleira. O sistema ajustará o estoque para este valor exato.</p>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Produto</label>
+                <select required value={formData.productId} onChange={e => setFormData({...formData, productId: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-amber-500">
+                  <option value="">Selecione o produto...</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (Atual no sistema: {p.stockQty})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Quantidade Real (Contada na prateleira)</label>
+                <input type="number" required min="0" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-amber-500 font-black text-amber-700 text-lg" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsInventoryModalOpen(false)} className="flex-1 px-4 py-2 border font-bold rounded-lg hover:bg-slate-50">Cancelar</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600">Ajustar Saldo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

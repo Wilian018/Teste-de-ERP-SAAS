@@ -15,6 +15,7 @@ import { CashModule } from './modules/cash/cash.module';
 import { FiscalModule } from './modules/fiscal/fiscal.module';
 import { AiModule } from './modules/ai/ai.module';
 import { FinancialModule } from './modules/financial/financial.module';
+import { StockModule } from './modules/stock/stock.module';
 import { TenantMiddleware } from './middleware/tenant.middleware';
 import { AuthModule } from './auth/auth.module';
 
@@ -35,6 +36,7 @@ import { AuthModule } from './auth/auth.module';
     AiModule,
     AuthModule,
     FinancialModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],
