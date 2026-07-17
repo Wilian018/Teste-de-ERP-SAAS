@@ -6,4 +6,5 @@ async function bootstrap() {
   app.enableCors(); // Enable CORS for the frontend
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0'); // Running on dynamic port or 3001
+}
 bootstrap();
