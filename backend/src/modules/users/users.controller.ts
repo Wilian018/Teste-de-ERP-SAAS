@@ -1,30 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { Roles } from '../../auth/roles.decorator';
-import { RolesGuard } from '../../auth/roles.guard';
+import { RequestContext } from '../../context/request-context';
 
 @Controller('users')
-@UseGuards(RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  private getCompanyId() { return 'default-company-id'; }
-  private getAuthorId() { return 'admin-user-id'; } // simulando o ID de quem está logado
+  private getCompanyId() {
+    const context = RequestContext.getStore();
+    if (!context || !context.companyId) {
+      throw new UnauthorizedException('Empresa não identificada no contexto da requisição');
+    }
+    return context.companyId;
+  }
+
+  private getAuthorId() { return 'admin-user-id'; } // mock admin
 
   @Post()
-  @Roles('ADMIN', 'MANAGER')
   create(@Body() data: any) {
     return this.usersService.create(this.getCompanyId(), this.getAuthorId(), data);
   }
 
   @Get()
-  @Roles('ADMIN', 'MANAGER')
   findAll() {
     return this.usersService.findAll(this.getCompanyId());
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'MANAGER')
   update(@Param('id') id: string, @Body() data: any) {
     return this.usersService.update(this.getCompanyId(), this.getAuthorId(), id, data);
   }

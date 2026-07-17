@@ -183,7 +183,28 @@ export default function CustomersPage() {
                         <td className="px-6 py-4 text-slate-600">R$ {Number(c.creditLimit).toFixed(2)}</td>
                         <td className="px-6 py-4 font-bold text-emerald-600">R$ {Number(c.creditLimit).toFixed(2)}</td>
                         <td className="px-6 py-4 text-center">
-                          <button onClick={() => alert("Em breve: Integração com Faturas")} className="text-xs flex items-center justify-center gap-1 mx-auto bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-200 font-bold transition">
+                          <button onClick={async () => {
+                            const val = prompt(`Digite o valor da fatura paga por ${c.name}:`, c.creditLimit);
+                            if (val) {
+                              try {
+                                const token = localStorage.getItem('saas_token');
+                                await fetch(`${API_URL}/api/financial`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                  body: JSON.stringify({
+                                    type: "INCOME",
+                                    amount: Number(val),
+                                    dueDate: new Date().toISOString(),
+                                    status: "PAID",
+                                    description: `Pagamento de Fatura Fiado: ${c.name}`
+                                  })
+                                });
+                                alert(`Fatura de R$ ${val} recebida com sucesso!`);
+                              } catch (e) {
+                                alert("Erro ao processar fatura.");
+                              }
+                            }
+                          }} className="text-xs flex items-center justify-center gap-1 mx-auto bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-200 font-bold transition">
                             <FileText size={14}/> Receber Fatura
                           </button>
                         </td>

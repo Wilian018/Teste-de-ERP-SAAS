@@ -1,9 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UnauthorizedException } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
+import { RequestContext } from '../../context/request-context';
 
 @Controller('companies')
 export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
+
+  private getCompanyId() {
+    const context = RequestContext.getStore();
+    if (!context || !context.companyId) {
+      throw new UnauthorizedException('Empresa não identificada no contexto da requisição');
+    }
+    return context.companyId;
+  }
 
   @Post()
   create(@Body() data: any) {
@@ -15,13 +24,13 @@ export class CompaniesController {
     return this.companiesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.companiesService.findOne(id);
+  @Get('my-company')
+  findMine() {
+    return this.companiesService.findOne(this.getCompanyId());
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.companiesService.update(id, data);
+  @Patch('my-company')
+  updateMine(@Body() data: any) {
+    return this.companiesService.update(this.getCompanyId(), data);
   }
 }
