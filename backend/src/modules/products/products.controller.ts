@@ -7,7 +7,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   private getCompanyId() {
-    const context = RequestContext.currentContext;
+    const context = RequestContext.getStore();
     if (!context || !context.companyId) {
       throw new UnauthorizedException('Empresa não identificada no contexto da requisição');
     }
