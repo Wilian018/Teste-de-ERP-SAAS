@@ -15,13 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const common_1 = require("@nestjs/common");
 const products_service_1 = require("./products.service");
+const request_context_1 = require("../../context/request-context");
 let ProductsController = class ProductsController {
     productsService;
     constructor(productsService) {
         this.productsService = productsService;
     }
     getCompanyId() {
-        return 'default-company-id';
+        const context = request_context_1.RequestContext.getStore();
+        if (!context || !context.companyId) {
+            throw new common_1.UnauthorizedException('Empresa não identificada no contexto da requisição');
+        }
+        return context.companyId;
     }
     create(data) {
         return this.productsService.create(this.getCompanyId(), data);

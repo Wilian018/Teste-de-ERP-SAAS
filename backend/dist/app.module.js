@@ -29,7 +29,7 @@ let AppModule = class AppModule {
     configure(consumer) {
         consumer
             .apply(tenant_middleware_1.TenantMiddleware)
-            .forRoutes('*');
+            .forRoutes('api/companies', 'api/products', 'api/customers', 'api/sales', 'api/purchases', 'api/suppliers', 'api/users', 'api/cash', 'api/fiscal');
     }
 };
 exports.AppModule = AppModule;

@@ -110,6 +110,7 @@ model FinancialTransaction {
   saleId      String?
   costCenterId String?
   type        String   // INCOME, EXPENSE
+  description String?
   amount      Decimal
   status      String   // PENDING, PAID
   dueDate     DateTime

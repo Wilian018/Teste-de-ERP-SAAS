@@ -19,7 +19,7 @@ let TenantMiddleware = class TenantMiddleware {
         this.jwtService = jwtService;
     }
     async use(req, res, next) {
-        if (req.path.startsWith('/api/auth/')) {
+        if (req.path.includes('/api/auth')) {
             return request_context_1.RequestContext.run({}, () => next());
         }
         const authHeader = req.headers.authorization;

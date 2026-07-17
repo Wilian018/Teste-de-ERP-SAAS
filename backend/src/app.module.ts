@@ -14,6 +14,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { CashModule } from './modules/cash/cash.module';
 import { FiscalModule } from './modules/fiscal/fiscal.module';
 import { AiModule } from './modules/ai/ai.module';
+import { FinancialModule } from './modules/financial/financial.module';
 import { TenantMiddleware } from './middleware/tenant.middleware';
 import { AuthModule } from './auth/auth.module';
 
@@ -32,7 +33,8 @@ import { AuthModule } from './auth/auth.module';
     CashModule,
     FiscalModule,
     AiModule,
-    AuthModule
+    AuthModule,
+    FinancialModule,
   ],
   controllers: [AppController],
   providers: [AppService],
